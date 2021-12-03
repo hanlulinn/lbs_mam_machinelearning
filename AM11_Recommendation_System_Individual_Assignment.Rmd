@@ -1,0 +1,211 @@
+---
+title: "AM11 Recommendation Systems - Individual Assignment"
+author: "Dr Kanishka Bhattacharya"
+date: "14/11/2021"
+output: 
+    html_document:
+      number_sections: false
+      highlight: haddock
+      theme: spacelab
+      toc: yes
+      toc_depth: 2
+      toc_float:
+        collapsed: false
+      fontzize: 10pt
+---
+
+
+<!--begin html code: I will mark the html code in my markdown files, these are not directly related to the course material-->
+
+</style>
+<style>
+body {
+text-align: justify}
+
+</style>
+
+
+<style>
+img {
+  border-radius: 15px;
+}
+
+
+<style>
+div.grey { background-color:#808080; border-radius: 5px; padding: 20px; border-style: groove;}
+</style>
+
+<style>
+div.font {color="red"}
+</style>
+
+<style>
+div.navy1 { background-color:#686868; border-radius: 5px; padding: 20px; border-style: groove; color: #ffffff;}
+
+</style>
+
+
+<style>
+div.navy { background-color:#A2A2B6; border-radius: 5px; padding: 20px; border-style: groove; color: #ffffff;}
+
+</style>
+
+<!--end html code-->
+
+<div><img src="GroupLens_Research_logo.png" width="200px" align="right"></div>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r setup2, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<style>
+  .bottom-three {
+     margin-bottom: 3cm;
+  }
+</style>
+
+
+<p class="bottom-three">
+   
+</p>
+
+# Introduction and GroupLens Research Data
+
+<div class = "navy1">
+
+This dataset (ml-latest) describes 5-star rating and free-text tagging activity from MovieLens, a movie recommendation service. It contains 27753444 ratings and 1108997 tag applications across 58098 movies. These data were created by 283228 users between January 09, 1995 and September 26, 2018. This dataset was generated on September 26, 2018.
+
+Users were selected at random for inclusion. All selected users had rated at least 1 movies. No demographic information is included. Each user is represented by an id, and no other information is provided.
+
+Relevant data for this assignment are contained in the files movies.csv and ratings.csv. More details about the contents and use of all these files are available at the following url. This and other GroupLens data sets are publicly available for download at [http://grouplens.org/datasets/].
+
+</div>
+
+# Your submission
+
+<div class = "navy1">
+Note that this is an individual assignment and therefore you need to work on your own and not discuss solutions with others.
+
+There are several questions embedded in the document to guide your work. However, you do not need to explicitly answer these questions in your report.
+
+You need to submit three files on canvas.
+<ol type="i">
+  <li>Technical report (in PDF) summarizing your findings. This is the main document we are going to grade. Please make sure the document is no longer than 2 pages using standard margins and font size of 11 </li>
+  <li>Your html file. Your report should use the results from this html file. </li>
+  <li>Your rmd file. Please make sure your rmd file knits. </li>
+</ol>  
+</div>
+
+# Assignment
+
+The task here is to work with the uploaded data and build a movie recommendation system. By the end of the analysis you will be asked to propose a Recommendation System for a movie watching platform like Netflix. You will need to use your analysis and findings to justify your proposed solution.
+
+## Step 1 - Exploratory Analysis
+
+Questions:
+
+(i) Can you spot any issues or gaps in the data that could influence results from a Recommendation System?
+(ii) In an ideal world, what additional data would you like to analyse?
+(iii) How does the count of views (# of ratings) vary across your list of movies?
+(iv) How are the user provided ratings (of movies) distributed?
+(v) How similar are the 100 most frequent movies or users to each other?
+
+Hint:
+The below code allows you to take a sample from the much larger data set that I have uploaded. You should feel free to use other appropriate approaches to sampling. You are also welcome to use the larger data set if you are familiar with approaches to deal with large data volumes.
+
+```{r Load data}
+rm(list = ls())
+library(data.table) # data.table provides much speed and power in R-programming!
+movieData <- fread(input = "data/movielens/ml-latest/movies.csv", stringsAsFactors=FALSE)
+ratingData <- fread(input = "data/movielens/ml-latest/ratings.csv", select = c(1:3))
+# this line will run slowly. It could slow down your knit, unless you adjusted the nrow arg
+
+uniqueUsers <- unique(ratingData$userId) # find list of unique userIds
+locationOfSampleUsers <- which(ratingData$userId %in% sample(uniqueUsers, 1e4, replace=FALSE))
+# Identify location of 10,000 randomly chosen users
+ratingData2 <- ratingData[locationOfSampleUsers,] # Take a subset of 10,000 users chosen in above lines
+ratingData <- ratingData2
+
+movieData2 <- movieData[which(movieData$movieId %in% unique(ratingData$movieId)),]
+# only select movies which we have a rating for
+movieData <- movieData2
+
+rm(movieData2, ratingData2, uniqueUsers, locationOfSampleUsers)
+# delete files no longer necessary for analysis
+
+```
+
+You can also use the following genre list for your analysis
+
+```{r List of Genres}
+list_genre <- c("Action", "Adventure", "Animation", "Children", 
+                "Comedy", "Crime","Documentary", "Drama", "Fantasy",
+                "Film-Noir", "Horror", "Musical", "Mystery","Romance",
+                "Sci-Fi", "Thriller", "War", "Western")
+```
+
+## Step 2 - Building recommendation systems
+
+Questions:
+
+(i) When do Collaborative Filtering methods work best and when do they fail?
+(ii) How do we build a recommendation system for infrequent users or new/rare movies?
+(iii) Which Recommendation Systems would you propose building on this data?
+(vi) Can you generate recommendations like 'users like you watched...' and 'movies similar to this...'?
+
+Hint:
+Consider building following recommendations systems:
+
+(i) Item  Based Collaborative Filtering,
+(ii) User Based Collaborative Filtering and,
+(iii) Model Based Collaborative Filtering using Matrix Factorisation
+
+## Step 3 - Model Performance and Sensitivity Analysis
+
+Questions:
+
+(i) Can you assess performance of the above models for frequent and infrequent users/movies?
+(ii) Which model and subset of data gives you the best performance?
+(iii) In this data set, under what circumstances does the performance of a Collaborative Filtering method deteriorate?
+
+Hint:
+
+(i) Select movies which have been rated by at least 'm' users 
+(ii) Select users who have rated at least 'n' movies
+
+I have suggested some 'threshold values' below, but you can pick different numbers.
+
+```{r Select most common users and movies}
+
+m <- c(20, 50, 100, 200, 300);
+n <- m
+
+```
+
+For each type of recommendation system we expect to see multiple RMSE numbers which correspond to various 'threshold values'. You can plot model performance against 'threshold values' for different types of RS. Your X-axis could be values of n or m and your y-axis could be a model performance metric.
+
+## Step 4 - Final proposed solution
+
+Questions:
+
+(i) What strategy would you implement for a movie recommendation platform like Netflix?
+(ii) Select two users randomly and describe movies that your system recommends for them. Could you elaborate on the relevance of the choices offered?
+(iii) What genres of movies are most relevant recommendations for these two users?
+
+## Rubric
+
+Your report will be graded in the following areas. I would ask you to pay particular attention to the need for suitable story telling. The analysis and inference should be knitted into a narrative which makes it easy for the reader to follow your work.
+
+(i) Exploratory Analysis, including cleaning steps and visualisations - 20% of Credit
+(ii) Building recommendation systems: The approaches you adopted to build recommendation systems, - 20% of Credit
+(iii) Model Performance and Sensitivity Analysis: The performance of each model and how that changes when we include only common movies/users (as opposed to including rarer movies/users) - 20% of Credit
+(iv) Final Proposed Solution: Description of the final proposed Recommendation System and how that works - 30% of Credit
+(v) Presentation and quality of your report - 10% of Credit
+
+## Reference
+
+> F. Maxwell Harper and Joseph A. Konstan. 2015. The MovieLens Datasets: History and Context. ACM Transactions on Interactive Intelligent Systems (TiiS) 5, 4: 19:1–19:19. <https://doi.org/10.1145/2827872>
